@@ -1,0 +1,14 @@
+Metadata-Version: 1.2
+Name: sghmc
+Version: 0.0.1
+Summary: realization of Stochastic Gradient Hamiltonian Monte Carlo
+Home-page: https://github.com/kingcheng12/Stochastic-Gradient-HMC-with-Friction
+Author: Zhenyu Tian, Gongjinghao Cheng
+Author-email: zhenyu.tian@duke.edu, gongjinghao.cheng@duke.edu
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License ::  OSI Approved:: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
