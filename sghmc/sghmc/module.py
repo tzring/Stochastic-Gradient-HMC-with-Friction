@@ -1,62 +1,161 @@
 import numpy as np
-from scipy import linalg as la
+from numba import jit,vectorize
+from ipyparallel import Client
+import numpy
 
-def SGHMC_friction(theta0, X, grad_logden_data, grad_logden_prior, V, eps, i, C, batch_size, M = None):
+def SGHMC(theta0, X, gradU, eps, sample_size, B, C, batch_size,burnin, M = None):
     '''
-    SGHMC with friction:
-    theta0(numpy array): starting position of theta (p,)
-    X: data (n,m)
-    grad_logden_data: gradient of the data log density (p,)
-    grad_logden_prior: gradient of the prior log density (p,)
-    V: estimated finsher information, (p,p)
+    SGHMC with friction. See details from Stochastic Gradient Hamiltonian Monte Carlo (Chen et al., 2014)
+    
+    INPUT:
+    ----------------------------------------------------------------------
+    theta0(1-dim numpy array): starting position of theta
+    
+    X(2-dims numpy array): data
+    
+    gradU(scale,theta,batch): function to compute gradient of U on a particular batch,
+    
+        INPUT:
+        ----------------------------------------------------------------------
+        scale: data size/ batch size
+        theta: theta
+        batch(numpy array): batch
+        ----------------------------------------------------------------------
+        OUTPUT:
+        ----------------------------------------------------------------------
+        thetat: Gradient of U on batch
+        ----------------------------------------------------------------------
+    
     eps: step size
-    i: number of iterations
+    
+    sample_size: number of samples drawn from prosterior distribution
+    
+    B: noise estimate
+    
     C: user specified friction term
+    
     batch_size: size of minibatches
-    M: Mass matrix
+    
+    burnin: number of iterations for warm up
+    
+    M(optional): Mass matrix, defualt is set to be identity.
+    ----------------------------------------------------------------------
+    OUTPUT:
+    ----------------------------------------------------------------------
+    thetat: thetas sampled from posterior distribution
+    ----------------------------------------------------------------------
     '''
     
-    def minib(x, batch_size):
-        '''
-        create minibatchs of x
-        x: data
-        batch_size: size of minibatch, if len(x)/batch_size is not integer, some batches wille have smaller sizes
-        
-        output: list of np.array of batchs [[batch_size,],...,[]]
-        '''
-        m = np.ceil(x.shape[0]/batch_size)
-        np.random.shuffle(x)
-
-        return np.array_split(x, m)
+    i = sample_size+burnin
+    p = theta0.shape[0]
+    thetat = np.zeros((i+1,p))
+    thetat[0] = theta0
     
-    def grad_U(grad_log_data, grad_log_prior, batch, theta, n):
-        '''compute the gradient of U of batch'''
-        
-        return -(n*grad_log_data(batch,theta)/batch.shape[0]+grad_log_prior(theta))
-    
-    n, m = X.shape
-    p = theta0.shape[0] # dim of theta
-    
-    # samples
-    thetat = np.zeros((i+1,p)) # (#samples,p)
-    thetat[0] = theta0 # set initial
-    batch = minib(X, batch_size) # m-list of (batch_size,)
+    m1 = int(np.ceil(X.shape[0]/batch_size))
+    batch = [X[i::m1] for i in range(m1)]
     m = len(batch)
-    B = 1/2*eps*V
-    
-    
+
     if(M is None):
         M = np.eye(p)
     
-    for t in range(i):
-        ri = np.random.multivariate_normal(np.zeros(p), M)
-        thetai = thetat[t]
-        for j in range(m):
-            bat = batch[j] # batch_j
-            thetai = thetai + eps * np.linalg.inv(M) @ ri
-            gU = grad_U(grad_logden_data,grad_logden_prior,bat,thetai,n)
-            ri = ri - eps * gU - eps * C @ ri + la.sqrtm(2*(C-B)*eps) @ np.random.multivariate_normal(np.zeros(p), M)
-        thetat[t+1] = thetai + eps * np.linalg.inv(M) @ ri
+    M1sqrt = np.linalg.cholesky(M)
+    Msqrt = np.linalg.cholesky(2*eps*(C-B))
     
-    return thetat[100:thetat.shape[0]]
-      
+    for t in range(i):
+        thetai = thetat[t]
+        ri = M1sqrt@np.random.normal(size=p)
+        for j in range(m):
+            thetai = thetai + eps * np.linalg.solve(M,ri)
+            gU = gradU(X.shape[0]/batch[j].shape[0],thetai,batch[j])
+            ri = ri - eps * gU - eps * C @ np.linalg.solve(M, ri) + Msqrt@np.random.normal(size=p)
+        thetat[t+1] = thetai
+    
+    return thetat[burnin+1:]
+
+
+def parallel_setup(view):
+    with view.sync_imports():
+        import numpy
+        
+def SGHMC_parallel(theta0, X, gradU, eps, sample_size, B, C, batch_size,burnin, M = None):
+    '''
+    parallel version of SGHMC. Please set ipython Clusters before running the following code.
+    
+    SETUP:
+    ----------------------------------------------------------------------
+    Step1:
+    Open a terminal (cmd.exe) and type:
+    ipcluster start -n 4(or other specified number of engines)
+        
+    INPUT:
+    ----------------------------------------------------------------------
+    theta0: starting position of theta
+    
+    X: data
+    
+    grad_logden_data: gradient of the data log density
+    
+    grad_logden_prior: gradient of the prior log density
+    
+    eps: step size
+    
+    sample_size: number of samples drawn from prosterior distribution
+    
+    B: noise estimate
+    
+    C: user specified friction term
+    
+    batch_size: size of minibatches
+    
+    burnin: number of iterations for warm up
+    
+    M(optional): Mass matrix, defualt is set to be identity.
+    ----------------------------------------------------------------------
+    OUTPUT:
+    
+    thetat: thetas sampled from posterior distribution
+    ----------------------------------------------------------------------
+    '''
+    from ipyparallel import Client
+    rc = Client()
+    dv = rc[:]
+    n = len(rc.ids)
+    parallel_setup(dv)
+    
+    dv.push(dict(gradU=gradU))
+    i = int((sample_size+n*burnin)/4)  
+
+    @dv.remote(block=True)
+    def SGHMC_friction4(theta0, X, gradU, eps, sample_size, B, C, batch_size,burnin, M = None):
+
+        i = sample_size+burnin
+        p = theta0.shape[0]
+        thetat = numpy.zeros((i+1,p))
+        thetat[0] = theta0
+
+        m1 = int(numpy.ceil(X.shape[0]/batch_size))
+        batch = [X[i::m1] for i in range(m1)]
+        m = len(batch)
+
+        if(M is None):
+            M = numpy.eye(p)
+
+        M1sqrt = numpy.linalg.cholesky(M)
+        Msqrt = numpy.linalg.cholesky(2*eps*(C-B))
+
+        for t in range(i):
+            thetai = thetat[t]
+            ri = M1sqrt@numpy.random.normal(size=p)
+            for j in range(m):
+                thetai = thetai + eps * numpy.linalg.solve(M,ri)
+                gU = gradU(X.shape[0]/batch[j].shape[0],thetai,batch[j])
+                ri = ri - eps * gU - eps * C @ numpy.linalg.solve(M, ri) + Msqrt@numpy.random.normal(size=p)
+            thetat[t+1] = thetai
+
+        return thetat[burnin+1:]
+    
+    theta = SGHMC_friction4(theta0, X, gradU, eps, i, B, C, batch_size,burnin, M)
+    return numpy.concatenate(theta)
+
+
+
