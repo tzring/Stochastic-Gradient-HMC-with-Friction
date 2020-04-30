@@ -21,9 +21,12 @@ This is the final project for STA 663 of Duke University. It is contributed by Z
 Run following code on commend for package installation:
 
 ```
-$ git clone https://github.com/kingcheng12/Stochastic-Gradient-HMC-with-Friction.git
-$ cd Stochastic-Gradient-HMC-with-Friction/sghmc/
-$ python setup.py install
+$ pip install --index-url https://test.pypi.org/simple/ SGHMC-GOZH
+```
+
+Then import functions in python environment with code below:
+```
+from sghmc.module import SGHMC, SGHMC_parallel
 ```
 
 Refer to project report for further details.
