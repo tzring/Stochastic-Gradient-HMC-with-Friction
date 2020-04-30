@@ -93,9 +93,18 @@ def SGHMC_parallel(theta0, X, gradU, eps, sample_size, B, C, batch_size,burnin, 
     
     X: data
     
-    grad_logden_data: gradient of the data log density
+    gradU(scale,theta,batch): function to compute gradient of U on a particular batch,
     
-    grad_logden_prior: gradient of the prior log density
+        INPUT:
+        ----------------------------------------------------------------------
+        scale: data size/ batch size
+        theta: theta
+        batch(numpy array): batch
+        ----------------------------------------------------------------------
+        OUTPUT:
+        ----------------------------------------------------------------------
+        thetat: Gradient of U on batch
+        ---------------------------------------------------------------------- 
     
     eps: step size
     
