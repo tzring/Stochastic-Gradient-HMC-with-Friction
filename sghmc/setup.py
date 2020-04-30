@@ -19,6 +19,7 @@ setuptools.setup(
         "numpy >= 1.17.2",
         "numba >= 0.45.1",
         "seaborn >= 0.9.0",
-        "scipy >= 1.4.1"
+        "scipy >= 1.4.1",
+        "ipyparallel >= 6.2.5"
     ],
 )
