@@ -2,9 +2,12 @@
 
 Run code below in commend line for installation:
 ```
-$ git clone https://github.com/kingcheng12/Stochastic-Gradient-HMC-with-Friction.git
-$ cd cd Stochastic-Gradient-HMC-with-Friction/sghmc/
-$ python setup.py install
+$ pip install --index-url https://test.pypi.org/simple/ SGHMC-GOZH
+```
+
+Then import functions in python environment with code below:
+```
+from sghmc.module import SGHMC, SGHMC_parallel
 ```
 
 ### Description

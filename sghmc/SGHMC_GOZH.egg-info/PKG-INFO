@@ -1,0 +1,44 @@
+Metadata-Version: 2.1
+Name: SGHMC-GOZH
+Version: 0.0.1
+Summary: realization of Stochastic Gradient Hamiltonian Monte Carlo
+Home-page: https://github.com/kingcheng12/Stochastic-Gradient-HMC-with-Friction
+Author: Zhenyu Tian, Gongjinghao Cheng
+Author-email: zhenyu.tian@duke.edu, gongjinghao.cheng@duke.edu
+License: UNKNOWN
+Description: ### Installation
+        
+        Run code below in commend line for installation:
+        ```
+        $ git clone https://github.com/kingcheng12/Stochastic-Gradient-HMC-with-Friction.git
+        $ cd cd Stochastic-Gradient-HMC-with-Friction/sghmc/
+        $ python setup.py install
+        ```
+        
+        ### Description
+        
+        The package contains function SGHMC and SGHMC_parallel. 
+        
+        Run code below in python environment for function instruction:
+        
+        ```
+        from sghmc.module import SGHMC, SGHMC_parallel
+        SGHMC?
+        SGHMC_parallel?
+        ```
+        
+        ### Instruction for SGHMC_parallel
+        
+        Run code below in commend line to set up cores before applying SGHMC_parallel
+        
+        ```
+        ipcluster start -n 4
+        ```
+        
+        You may change 4 to other specific number of engines.
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
