@@ -10,9 +10,11 @@ This is the final project for STA 663 of Duke University. It is contributed by Z
 
 - `sghmc/` : package containing modules
 
-- `report/` : project report
+- `Report/` : project report
 
-- `test/` : examples for development and module testing
+- `example/` : examples for development and module testing
+
+- `development log/` : development history
 
 ### Installation
 
