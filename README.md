@@ -4,7 +4,7 @@ Implementation of Stochastic Gradient Hamiltonian Monte Carlo.
 
 The original paper is available on http://proceedings.mlr.press/v32/cheni14.pdf.
 
-This is the final project for STA 663 of Duke University. It is contributed by Zhenyu Tian (zhenyu.tian@duke.edu) and Gongjinghao Cheng (gongjinghao.cheng@duke.edu)
+This is the final project for STA 663 at Duke University. It is contributed by Zhenyu Tian (zhenyu.tian@duke.edu) and Gongjinghao Cheng (gongjinghao.cheng@duke.edu)
 
 ### Repository structure
 
